@@ -1,19 +1,32 @@
-const mysql = require("mysql");
+const { Client } = require("pg");
 
-let db_con = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "pcommersedb",
-  multipleStatements: true,
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-db_con.connect((err) => {
-  if (err) {
-    console.log("Database Connection Failed !!!");
-  } else {
-    console.log("connected to Database");
-  }
-});
+client.connect();
 
-module.exports = db_con;
+module.exports = client;
+
+// const mysql = require("mysql");
+
+// let db_con = mysql.createConnection({
+//   host: "localhost",
+//   user: "root",
+//   password: "",
+//   database: "pcommersedb",
+//   multipleStatements: true,
+// });
+
+// db_con.connect((err) => {
+//   if (err) {
+//     console.log("Database Connection Failed !!!");
+//   } else {
+//     console.log("connected to Database");
+//   }
+// });
+
+// module.exports = db_con;
