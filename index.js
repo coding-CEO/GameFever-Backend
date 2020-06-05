@@ -17,6 +17,12 @@ const app = express();
 
 ///////////////////////
 // OTHER STUFF HERE...
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  // res.header("Access-Control-Allow-Credentials", true);
+  // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  next();
+});
 app.use(
   cors({
     origin: "http://localhost:3000",
