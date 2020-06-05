@@ -17,11 +17,7 @@ const app = express();
 
 ///////////////////////
 // OTHER STUFF HERE...
-app.use(
-  cors({
-    origin: "*",
-  })
-);
+app.use(cors());
 app.use(express.json());
 dotenv.config();
 app.use("/public", express.static("public"));
@@ -35,7 +31,7 @@ app.use("/user/:userName", userTokenValidation, userRoute);
 app.use("/admin", adminTokenValidation, adminRoute);
 app.use("/login", loginRoute);
 app.use("/signUp", signUpRoute);
-app.use("/banners", banners);
+app.use("/banners", cors(), banners);
 app.use("/homeCards", homeCards);
 app.use("/product", productRoute);
 app.use("/category", categoryRoute);
