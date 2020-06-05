@@ -19,7 +19,7 @@ const app = express();
 // OTHER STUFF HERE...
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "https://pcommerce.netlify.app",
   })
 );
 app.use(express.json());
