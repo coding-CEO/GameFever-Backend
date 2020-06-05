@@ -2,9 +2,13 @@ const mysql = require("mysql");
 
 let db_con = mysql.createConnection({
   host: "localhost",
-  user: "root",
-  password: "",
-  database: "pcommersedb",
+  user: "id13969297_pcommersedbuser",
+  password: "rRb%ed(3vZ)PKdAP",
+  database: "id13969297_pcommersedb",
+  // host: "localhost",
+  // user: "root",
+  // password: "",
+  // database: "pcommersedb",
   multipleStatements: true,
 });
 
