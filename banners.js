@@ -3,11 +3,18 @@ const adminTokenValidation = require("./tokenValidations/adminTokenValidation");
 const db = require("./db");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 const fsExtra = require("fs-extra");
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "./public/banners");
+    let dir = "./public/banners";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    } else {
+      cb(null, dir);
+    }
   },
   filename: (req, file, cb) => {
     let paths = path.parse(file.originalname);
@@ -64,7 +71,10 @@ router.post("/", adminTokenValidation, (req, res) => {
   let qry1 = "DELETE FROM banners";
   db.query(qry1, (err) => {
     if (err) return res.status(500).send("Internal Error");
-    fsExtra.emptyDirSync("/public/banners");
+    let dir = "/public/banners";
+    if (fs.existsSync(dir)) {
+      fsExtra.emptyDirSync(dir);
+    }
     upload(req, res, async (err) => {
       if (err) {
         console.log(err);
