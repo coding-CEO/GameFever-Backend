@@ -7,7 +7,9 @@ const client = new Client({
   },
 });
 
-client.connect();
+client.connect((err) => {
+  console.log(err);
+});
 
 module.exports = client;
 
