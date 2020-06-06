@@ -2,6 +2,7 @@ const router = require("express").Router();
 const db = require("../../../db");
 const multer = require("multer");
 const fs = require("fs");
+const path = require("path");
 const fsExtra = require("fs-extra");
 
 let storage = multer.diskStorage({
@@ -15,12 +16,36 @@ let storage = multer.diskStorage({
     }
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + file.originalname);
+    let paths = path.parse(file.originalname);
+    if (paths.ext.trim().length > 0) {
+      cb(null, Date.now() + file.originalname);
+    } else {
+      let ext = getFileType(file.mimetype);
+      if (ext) {
+        cb(null, Date.now() + file.originalname + ext);
+      } else {
+        // NO EXTENSION
+        console.error("No extension found");
+      }
+    }
   },
 });
 let upload = multer({
   storage: storage,
 }).single("profilePic");
+
+getFileType = (type) => {
+  switch (type) {
+    case "image/jpeg":
+      return ".jpeg";
+    case "image/png":
+      return ".png";
+    case "image/jpg":
+      return ".jpg";
+    default:
+      return null;
+  }
+};
 
 router.get("/", (req, res) => {
   let userId = req.user.userId;
