@@ -56,10 +56,13 @@ getPostProducts = (qry2, homeCard) => {
           let proId = parseInt(product.productId);
           if (!isNaN(proId)) values.push([homeCardId, proId]);
         }
-        db.query(qry3, [values], (err) => {
-          if (err) return reject(err);
-          resolve(true);
-        });
+
+        if(values.length > 0){
+          db.query(qry3, [values], (err) => {
+            if (err) return reject(err);
+            resolve(true);
+          });
+        }
       }
     });
   });
@@ -77,7 +80,7 @@ router.post("/", adminTokenValidation, (req, res) => {
       }
       return res.send("Home cards saved successful");
     } catch (error) {
-      return res.status(500).send("Internal Error");
+      return res.status(500).send("Internal Error" + error);
     }
   });
 });
