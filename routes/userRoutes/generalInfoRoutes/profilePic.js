@@ -102,7 +102,7 @@ router.patch("/", (req, res) => {
       "UPDATE general_profile SET userProfilePicUrl = ? WHERE userId = ?";
 
     try {
-      await createUserProfilePicFolder();
+      await createUserProfilePicFolder(userId);
       let filepath = await uploadProfilePic(userId, file.path, file.filename);
 
       db.query(qry2, [filepath, userId], (err) => {
