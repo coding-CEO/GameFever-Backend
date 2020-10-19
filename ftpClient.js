@@ -2,7 +2,6 @@ const ftp = require("ftp");
 
 const config = {
   host: process.env.FTPHOST,
-  port: process.env.FTPPORT,
   user: process.env.FTPUSER,
   password: process.env.FTPPASS,
 };
@@ -10,10 +9,10 @@ const config = {
 const client = new ftp();
 
 client.on("ready", () => {
-  console.log("connection success");
+  console.log("FTP connection success");
 });
 client.on("error", (err) => {
-  console.log("FTP failed", err);
+  console.error("FTP failed", err);
 });
 
 client.connect(config);
