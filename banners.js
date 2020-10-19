@@ -5,10 +5,12 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const fsExtra = require("fs-extra");
+const ftpclient = require("./ftpClient");
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let dir = "./public/banners";
+    // let dir = "./public/banners";
+    let dir = "./public/temp";
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
       cb(null, dir);
@@ -67,14 +69,38 @@ getBanners = (qry2, values) => {
   });
 };
 
+createBannerFolder = () => {
+  return new Promise((resolve, reject) => {
+    ftpclient.rmdir("./admin/banners", true, (err) => {
+      if (err) return reject(err);
+      ftpclient.mkdir("./admin/banners", (err) => {
+        if (err) return reject(err);
+        return resolve(true);
+      });
+    });
+  });
+};
+
+uploadBanners = (filepath, filename) => {
+  return new Promise((resolve, reject) => {
+    let remotePath = "./admin/banners/" + filename;
+    ftpclient.put(filepath, remotePath, (err) => {
+      if (err) return reject(err);
+      return resolve(remotePath);
+    });
+  });
+};
+
 router.post("/", adminTokenValidation, (req, res) => {
   let qry1 = "DELETE FROM banners";
   db.query(qry1, (err) => {
     if (err) return res.status(500).send("Internal Error");
-    let dir = "/public/banners";
-    if (fs.existsSync(dir)) {
-      fsExtra.emptyDirSync(dir);
-    }
+
+    // let dir = "/public/banners";
+    // if (fs.existsSync(dir)) {
+    //   fsExtra.emptyDirSync(dir);
+    // }
+
     upload(req, res, async (err) => {
       if (err) {
         console.log(err);
@@ -84,10 +110,15 @@ router.post("/", adminTokenValidation, (req, res) => {
       let files = req.files;
       let qry2 = "INSERT INTO banners(bannerImgUrl) VALUES ?";
       let values = [];
-      for (let file of files) {
-        values.push([file.path]);
-      }
+
       try {
+        await createBannerFolder();
+
+        for (let file of files) {
+          let path = await uploadBanners(file.path, file.filename);
+          values.push([path]);
+        }
+
         let resu = await getBanners(qry2, values);
         if (resu) return res.send("Success");
       } catch (error) {
