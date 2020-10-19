@@ -3,6 +3,7 @@ const db = require("../../db");
 const bcrypt = require("bcryptjs");
 const { becomeASellerStatuses } = require("../../const");
 // const fs = require("fs");
+const ftpclient = require("../../ftpClient");
 
 createEmptyFolders = (userId) => {
   return new Promise((resolve, reject) => {
