@@ -83,10 +83,11 @@ createBannerFolder = () => {
 
 uploadBanners = (filepath, filename) => {
   return new Promise((resolve, reject) => {
-    let remotePath = "./admin/banners/" + filename;
+    let databasePath = "admin/banners/" + filename;
+    let remotePath = "./" + databasePath;
     ftpclient.put(filepath, remotePath, (err) => {
       if (err) return reject(err);
-      return resolve(remotePath);
+      return resolve(databasePath);
     });
   });
 };
