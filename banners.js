@@ -4,7 +4,7 @@ const db = require("./db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const fsExtra = require("fs-extra");
+// const fsExtra = require("fs-extra");
 const ftpclient = require("./ftpClient");
 
 let storage = multer.diskStorage({
