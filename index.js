@@ -17,11 +17,12 @@ const app = express();
 
 ///////////////////////
 // OTHER STUFF HERE...
-app.use(
-  cors({
-    origin: "https://pcommerce.netlify.app",
-  })
-);
+app.use(cors());
+// app.use(
+//   cors({
+//     origin: "https://pcommerce.netlify.app",
+//   })
+// );
 app.use(express.json());
 dotenv.config();
 app.use("/public", express.static("public"));
