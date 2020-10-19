@@ -3,12 +3,14 @@ const db = require("../../../db");
 const { becomeASellerStatuses } = require("../../../const");
 const multer = require("multer");
 const fs = require("fs");
-const fsExtra = require("fs-extra");
+// const fsExtra = require("fs-extra");
 const path = require("path");
+const ftpclient = require("./ftpClient");
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let dir = `./public/users/${req.user.userId}/shopApplication`;
+    // let dir = `./public/users/${req.user.userId}/shopApplication`;
+    let dir = "./public/temp";
     if (fs.existsSync(dir)) {
       cb(null, dir);
     } else {
@@ -59,14 +61,38 @@ router.get("/", (req, res) => {
   });
 });
 
+createUserShopApplicationFolder = (userId) => {
+  return new Promise((resolve, reject) => {
+    ftpclient.rmdir(`./users/${userId}/aadhar`, true, (err) => {
+      if (err) return reject(err);
+      ftpclient.mkdir(`./users/${userId}/aadhar`, (err) => {
+        if (err) return reject(err);
+        return resolve(true);
+      });
+    });
+  });
+};
+
+uploadAadharImages = (userId, filepath, filename) => {
+  return new Promise((resolve, reject) => {
+    let databasePath = `users/${userId}/aadhar/` + filename;
+    let remotePath = "./" + databasePath;
+    ftpclient.put(filepath, remotePath, (err) => {
+      if (err) return reject(err);
+      return resolve(databasePath);
+    });
+  });
+};
+
 router.post("/", (req, res) => {
   let userId = req.user.userId;
-  let dir = `./public/users/${req.user.userId}/shopApplication`;
-  if (fs.existsSync(dir)) {
-    fsExtra.emptyDirSync(dir);
-  }
 
-  upload(req, res, (err) => {
+  // let dir = `./public/users/${req.user.userId}/shopApplication`;
+  // if (fs.existsSync(dir)) {
+  //   fsExtra.emptyDirSync(dir);
+  // }
+
+  upload(req, res, async (err) => {
     if (err) {
       console.log(err);
       return res.status(500).send(err.message);
@@ -77,31 +103,48 @@ router.post("/", (req, res) => {
       let qry =
         "INSERT INTO shop_application (userId, frontAadharCardImgUrl, backAadharCardImgUrl, firstName, lastName, age, isMale) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-      db.query(
-        qry,
-        [
+      try {
+        await createUserShopApplicationFolder(userId);
+        let frontAadharPath = await uploadAadharImages(
           userId,
           files[0].path,
+          files[0].filename
+        );
+        let backAadharPath = await uploadAadharImages(
+          userId,
           files[1].path,
-          req.body.firstName,
-          req.body.lastName,
-          parseInt(req.body.age),
-          req.body.isMale === "true" ? true : false,
-        ],
-        (err) => {
-          if (err) return res.status(500).send("Internal Error");
+          files[1].filename
+        );
 
-          let qry1 = "UPDATE become_a_seller SET status = ? WHERE userId = ?";
-          db.query(
-            qry1,
-            [becomeASellerStatuses.BECOME_A_SELLER_STATUS_PENDING, userId],
-            (err) => {
-              if (err) return res.status(500).send("Internal Error");
-              res.send("Application uploaded");
-            }
-          );
-        }
-      );
+        db.query(
+          qry,
+          [
+            userId,
+            frontAadharPath,
+            backAadharPath,
+            req.body.firstName,
+            req.body.lastName,
+            parseInt(req.body.age),
+            req.body.isMale === "true" ? true : false,
+          ],
+          (err) => {
+            if (err) return res.status(500).send("Internal Error");
+
+            let qry1 = "UPDATE become_a_seller SET status = ? WHERE userId = ?";
+            db.query(
+              qry1,
+              [becomeASellerStatuses.BECOME_A_SELLER_STATUS_PENDING, userId],
+              (err) => {
+                if (err) return res.status(500).send("Internal Error");
+                res.send("Application uploaded");
+              }
+            );
+          }
+        );
+      } catch (err) {
+        console.log(err);
+        return res.status(500).send("Internal Error");
+      }
     }
   });
 });

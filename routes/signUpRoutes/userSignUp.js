@@ -2,7 +2,28 @@ const router = require("express").Router();
 const db = require("../../db");
 const bcrypt = require("bcryptjs");
 const { becomeASellerStatuses } = require("../../const");
-const fs = require("fs");
+// const fs = require("fs");
+
+createEmptyFolders = (userId) => {
+  return new Promise((resolve, reject) => {
+    ftpclient.mkdir(`./users/${userId}`, (err) => {
+      if (err) return reject(err);
+      ftpclient.mkdir(`./users/${userId}/aadhar`, (err) => {
+        if (err) return reject(err);
+        ftpclient.mkdir(`./users/${userId}/shopProfilePic`, (err) => {
+          if (err) return reject(err);
+          ftpclient.mkdir(`./users/${userId}/profilePic`, (err) => {
+            if (err) return reject(err);
+            ftpclient.mkdir(`./users/${userId}/products`, (err) => {
+              if (err) return reject(err);
+              return resolve(true);
+            });
+          });
+        });
+      });
+    });
+  });
+};
 
 router.post("/", (req, res) => {
   let userEmail = req.body.userEmail;
@@ -30,15 +51,16 @@ router.post("/", (req, res) => {
           db.query(
             qry2,
             [uid, uid, becomeASellerStatuses.BECOME_A_SELLER_STATUS_NOT],
-            (err) => {
+            async (err) => {
               if (err)
                 return res.status(500).send("Internal Error 333 =>" + err);
-              let dir = `./public/users/${uid}`;
-              if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
+
+              try {
+                await createEmptyFolders(uid);
                 res.send("SignUp Success !");
-              } else {
-                res.send("SignUp Success !");
+              } catch (error) {
+                console.log(error);
+                res.status(400).send("SignUp Failed");
               }
             }
           );

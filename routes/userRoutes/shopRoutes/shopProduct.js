@@ -3,12 +3,14 @@ const db = require("../../../db");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const ftpclient = require("./ftpClient");
 
 // TODO: delete product from whole website.
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    let dir = `./public/products`;
+    // let dir = `./public/products`;
+    let dir = "./public/temp";
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
       cb(null, dir);
@@ -74,6 +76,38 @@ uploadImages = (qry1, productId, otherImgUrl) => {
     });
   });
 };
+
+createFolderProduct = (userId, productId) => {
+  return new Promise((resolve, reject) => {
+    ftpclient.mkdir(`./users/${userId}/products/${productId}`, (err) => {
+      if (err) return reject(err);
+      return resolve(true);
+    });
+  });
+};
+createUpdateProductFolder = (userId, productId) => {
+  return new Promise((resolve, reject) => {
+    ftpclient.rmdir(`./users/${userId}/products/${productId}`, true, (err) => {
+      if (err) return reject(err);
+      ftpclient.mkdir(`./users/${userId}/products/${productId}`, (err) => {
+        if (err) return reject(err);
+        return resolve(true);
+      });
+    });
+  });
+};
+
+uploadImagesFTP = (userId, productId, filepath, filename) => {
+  return new Promise((resolve, reject) => {
+    let databasePath = `users/${userId}/products/${productId}/` + filename;
+    let remotePath = "./" + databasePath;
+    ftpclient.put(filepath, remotePath, (err) => {
+      if (err) return reject(err);
+      return resolve(databasePath);
+    });
+  });
+};
+
 router.post("/", (req, res) => {
   let userId = req.user.userId;
 
@@ -105,24 +139,43 @@ router.post("/", (req, res) => {
         if (err) return res.status(500).send("Internal Error");
 
         let productId = rows.insertId;
-        for (let i = 1; i < files.length; i++) {
-          let otherImgUrl = files[i].path;
-          let qry1 =
-            "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
-          try {
-            await uploadImages(qry1, productId, otherImgUrl);
-          } catch (error) {
-            return res.status(500).send("Internal Error =>" + error.message);
+
+        try {
+          await createFolderProduct(userId, productId);
+
+          for (let i = 1; i < files.length; i++) {
+            let qry1 =
+              "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
+
+            let path = await uploadImagesFTP(
+              userId,
+              productId,
+              files[i].path,
+              files[i].filename
+            );
+            await uploadImages(qry1, productId, path);
           }
+
+          let posterpath = await uploadImagesFTP(
+            userId,
+            productId,
+            poster.path,
+            poster.filename
+          );
+
+          let qry2 =
+            "INSERT INTO shop (userId, productId) VALUES (?, ?); INSERT INTO category (categoryId, productId) VALUES (?, ?); UPDATE product SET productPosterImgUrl = ? WHERE productId = ?;";
+          db.query(
+            qry2,
+            [userId, productId, categoryId, productId, posterpath, productId],
+            (err) => {
+              if (err) return res.status(500).send("Internal Error");
+              res.send("Product Inserted");
+            }
+          );
+        } catch (error) {
+          return res.status(500).send("Internal Error =>" + error.message);
         }
-
-        let qry2 =
-          "INSERT INTO shop (userId, productId) VALUES (?, ?); INSERT INTO category (categoryId, productId) VALUES (?, ?);";
-        db.query(qry2, [userId, productId, categoryId, productId], (err) => {
-          if (err) return res.status(500).send("Internal Error");
-
-          res.send("Product Inserted");
-        });
       }
     );
   });
@@ -131,7 +184,7 @@ router.post("/", (req, res) => {
 router.patch("/:productId", (req, res) => {
   let productId = req.params.productId;
 
-  upload(req, res, (err) => {
+  upload(req, res, async (err) => {
     if (err) {
       console.log(err);
       return res.status(500).send(err.message);
@@ -141,49 +194,68 @@ router.patch("/:productId", (req, res) => {
     let poster = files[0];
     let categoryId = parseInt(req.body.categoryId);
 
-    let qry =
-      "UPDATE product SET productTitle = ?, productPrice = ?, productMRP = ?, productDescription = ?, productPosterImgUrl = ?, productStock = ?, categoryId = ?, productTags = ? WHERE productId = ?";
-    db.query(
-      qry,
-      [
-        req.body.title,
-        parseFloat(req.body.price),
-        parseFloat(req.body.mrp),
-        req.body.description,
-        poster.path,
-        parseInt(req.body.stock),
-        parseInt(req.body.categoryId),
-        req.body.tags,
+    try {
+      await createUpdateProductFolder(userId, productId);
+      let posterpath = await uploadImagesFTP(
+        userId,
         productId,
-      ],
-      async (err) => {
-        if (err) return res.status(500).send("Internal Error");
+        poster.path,
+        poster.filename
+      );
 
-        let qry0 = "DELETE FROM other_images WHERE productId = ?";
-        await deleteImages(qry0, productId);
-
-        for (let i = 1; i < files.length; i++) {
-          let otherImgUrl = files[i].path;
-          let qry1 =
-            "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
-          try {
-            await uploadImages(qry1, productId, otherImgUrl);
-          } catch (error) {
-            return res.status(500).send("Internal Error =>" + error.message);
-          }
-        }
-
-        let qry2 = "DELETE FROM category WHERE productId = ?";
-        await deleteImages(qry2, productId);
-
-        let qry3 = "INSERT INTO category (categoryId, productId) VALUES (?, ?)";
-        db.query(qry3, [categoryId, productId], (err) => {
+      let qry =
+        "UPDATE product SET productTitle = ?, productPrice = ?, productMRP = ?, productDescription = ?, productPosterImgUrl = ?, productStock = ?, categoryId = ?, productTags = ? WHERE productId = ?";
+      db.query(
+        qry,
+        [
+          req.body.title,
+          parseFloat(req.body.price),
+          parseFloat(req.body.mrp),
+          req.body.description,
+          posterpath,
+          parseInt(req.body.stock),
+          parseInt(req.body.categoryId),
+          req.body.tags,
+          productId,
+        ],
+        async (err) => {
           if (err) return res.status(500).send("Internal Error");
 
-          res.send("Product Updated");
-        });
-      }
-    );
+          try {
+            let qry0 = "DELETE FROM other_images WHERE productId = ?";
+            await deleteImages(qry0, productId);
+
+            for (let i = 1; i < files.length; i++) {
+              let qry1 =
+                "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
+              let path = await uploadImagesFTP(
+                userId,
+                productId,
+                files[i].path,
+                files[i].filename
+              );
+              await uploadImages(qry1, productId, path);
+            }
+
+            let qry2 = "DELETE FROM category WHERE productId = ?";
+            await deleteImages(qry2, productId);
+
+            let qry3 =
+              "INSERT INTO category (categoryId, productId) VALUES (?, ?)";
+            db.query(qry3, [categoryId, productId], (err) => {
+              if (err) return res.status(500).send("Internal Error");
+              res.send("Product Updated");
+            });
+          } catch (error) {
+            console.log(error);
+            return res.status(500).send("Internal Error");
+          }
+        }
+      );
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send("Internal Error");
+    }
   });
 });
 
