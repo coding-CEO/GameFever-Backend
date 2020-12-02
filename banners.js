@@ -4,8 +4,7 @@ const db = require("./db");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-// const fsExtra = require("fs-extra");
-const ftpclient = require("./ftpClient");
+const imgUpload = require('../../../uploadImages');
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -69,29 +68,6 @@ getBanners = (qry2, values) => {
   });
 };
 
-createBannerFolder = () => {
-  return new Promise((resolve, reject) => {
-    ftpclient.rmdir("./admin/banners", true, (err) => {
-      if (err) return reject(err);
-      ftpclient.mkdir("./admin/banners", (err) => {
-        if (err) return reject(err);
-        return resolve(true);
-      });
-    });
-  });
-};
-
-uploadBanners = (filepath, filename) => {
-  return new Promise((resolve, reject) => {
-    let databasePath = "admin/banners/" + filename;
-    let remotePath = "./" + databasePath;
-    ftpclient.put(filepath, remotePath, (err) => {
-      if (err) return reject(err);
-      return resolve(databasePath);
-    });
-  });
-};
-
 router.post("/", adminTokenValidation, (req, res) => {
   let qry1 = "DELETE FROM banners";
   db.query(qry1, (err) => {
@@ -113,15 +89,14 @@ router.post("/", adminTokenValidation, (req, res) => {
       let values = [];
 
       try {
-        await createBannerFolder();
 
         for (let file of files) {
-          let path = await uploadBanners(file.path, file.filename);
+          let path = await imgUpload(file.path);
           values.push([path]);
         }
 
-        let resu = await getBanners(qry2, values);
-        if (resu) return res.send("Success");
+        await getBanners(qry2, values);
+        return res.send("Success");
       } catch (error) {
         console.log(error);
         return res.status(500).send("Internal Error");

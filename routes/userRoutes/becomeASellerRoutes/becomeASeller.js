@@ -3,9 +3,8 @@ const db = require("../../../db");
 const { becomeASellerStatuses } = require("../../../const");
 const multer = require("multer");
 const fs = require("fs");
-// const fsExtra = require("fs-extra");
 const path = require("path");
-const ftpclient = require("../../../ftpClient");
+const imgUpload = require('../../../uploadImages');
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -61,29 +60,6 @@ router.get("/", (req, res) => {
   });
 });
 
-createUserShopApplicationFolder = (userId) => {
-  return new Promise((resolve, reject) => {
-    ftpclient.rmdir(`./users/${userId}/aadhar`, true, (err) => {
-      if (err) return reject(err);
-      ftpclient.mkdir(`./users/${userId}/aadhar`, (err) => {
-        if (err) return reject(err);
-        return resolve(true);
-      });
-    });
-  });
-};
-
-uploadAadharImages = (userId, filepath, filename) => {
-  return new Promise((resolve, reject) => {
-    let databasePath = `users/${userId}/aadhar/` + filename;
-    let remotePath = "./" + databasePath;
-    ftpclient.put(filepath, remotePath, (err) => {
-      if (err) return reject(err);
-      return resolve(databasePath);
-    });
-  });
-};
-
 router.post("/", (req, res) => {
   let userId = req.user.userId;
 
@@ -104,17 +80,8 @@ router.post("/", (req, res) => {
         "INSERT INTO shop_application (userId, frontAadharCardImgUrl, backAadharCardImgUrl, firstName, lastName, age, isMale) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
       try {
-        await createUserShopApplicationFolder(userId);
-        let frontAadharPath = await uploadAadharImages(
-          userId,
-          files[0].path,
-          files[0].filename
-        );
-        let backAadharPath = await uploadAadharImages(
-          userId,
-          files[1].path,
-          files[1].filename
-        );
+        let frontAadharPath = await imgUpload(files[0].path);
+        let backAadharPath = await imgUpload(files[1].path);
 
         db.query(
           qry,

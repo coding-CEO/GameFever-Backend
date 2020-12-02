@@ -3,7 +3,7 @@ const db = require("../../../db");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const ftpclient = require("../../../ftpClient");
+const imgUpload = require('../../../uploadImages');
 
 // TODO: delete product from whole website.
 
@@ -77,37 +77,6 @@ uploadImages = (qry1, productId, otherImgUrl) => {
   });
 };
 
-createFolderProduct = (userId, productId) => {
-  return new Promise((resolve, reject) => {
-    ftpclient.mkdir(`./users/${userId}/products/${productId}`, (err) => {
-      if (err) return reject(err);
-      return resolve(true);
-    });
-  });
-};
-createUpdateProductFolder = (userId, productId) => {
-  return new Promise((resolve, reject) => {
-    ftpclient.rmdir(`./users/${userId}/products/${productId}`, true, (err) => {
-      if (err) return reject(err);
-      ftpclient.mkdir(`./users/${userId}/products/${productId}`, (err) => {
-        if (err) return reject(err);
-        return resolve(true);
-      });
-    });
-  });
-};
-
-uploadImagesFTP = (userId, productId, filepath, filename) => {
-  return new Promise((resolve, reject) => {
-    let databasePath = `users/${userId}/products/${productId}/` + filename;
-    let remotePath = "./" + databasePath;
-    ftpclient.put(filepath, remotePath, (err) => {
-      if (err) return reject(err);
-      return resolve(databasePath);
-    });
-  });
-};
-
 router.post("/", (req, res) => {
   let userId = req.user.userId;
 
@@ -141,27 +110,16 @@ router.post("/", (req, res) => {
         let productId = rows.insertId;
 
         try {
-          await createFolderProduct(userId, productId);
 
           for (let i = 1; i < files.length; i++) {
             let qry1 =
               "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
 
-            let path = await uploadImagesFTP(
-              userId,
-              productId,
-              files[i].path,
-              files[i].filename
-            );
+            let path = await imgUpload(files[i].path);
             await uploadImages(qry1, productId, path);
           }
 
-          let posterpath = await uploadImagesFTP(
-            userId,
-            productId,
-            poster.path,
-            poster.filename
-          );
+          let posterpath = await imgUpload(poster.path);
 
           let qry2 =
             "INSERT INTO shop (userId, productId) VALUES (?, ?); INSERT INTO category (categoryId, productId) VALUES (?, ?); UPDATE product SET productPosterImgUrl = ? WHERE productId = ?;";
@@ -195,13 +153,7 @@ router.patch("/:productId", (req, res) => {
     let categoryId = parseInt(req.body.categoryId);
 
     try {
-      await createUpdateProductFolder(userId, productId);
-      let posterpath = await uploadImagesFTP(
-        userId,
-        productId,
-        poster.path,
-        poster.filename
-      );
+      let posterpath = await imgUpload(poster.path);
 
       let qry =
         "UPDATE product SET productTitle = ?, productPrice = ?, productMRP = ?, productDescription = ?, productPosterImgUrl = ?, productStock = ?, categoryId = ?, productTags = ? WHERE productId = ?";
@@ -228,12 +180,7 @@ router.patch("/:productId", (req, res) => {
             for (let i = 1; i < files.length; i++) {
               let qry1 =
                 "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
-              let path = await uploadImagesFTP(
-                userId,
-                productId,
-                files[i].path,
-                files[i].filename
-              );
+              let path = await imgUpload(files[i].path);
               await uploadImages(qry1, productId, path);
             }
 

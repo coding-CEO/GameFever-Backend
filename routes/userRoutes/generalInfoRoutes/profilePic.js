@@ -4,7 +4,7 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 // const fsExtra = require("fs-extra");
-const ftpclient = require("../../../ftpClient");
+const imgUpload = require('../../../uploadImages');
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -60,29 +60,6 @@ router.get("/", (req, res) => {
   });
 });
 
-createUserProfilePicFolder = (userId) => {
-  return new Promise((resolve, reject) => {
-    ftpclient.rmdir(`./users/${userId}/profilePic`, true, (err) => {
-      if (err) return reject(err);
-      ftpclient.mkdir(`./users/${userId}/profilePic`, (err) => {
-        if (err) return reject(err);
-        return resolve(true);
-      });
-    });
-  });
-};
-
-uploadProfilePic = (userId, filepath, filename) => {
-  return new Promise((resolve, reject) => {
-    let databasePath = `users/${userId}/profilePic/` + filename;
-    let remotePath = "./" + databasePath;
-    ftpclient.put(filepath, remotePath, (err) => {
-      if (err) return reject(err);
-      return resolve(databasePath);
-    });
-  });
-};
-
 router.patch("/", (req, res) => {
   const userId = req.user.userId;
 
@@ -102,8 +79,7 @@ router.patch("/", (req, res) => {
       "UPDATE general_profile SET userProfilePicUrl = ? WHERE userId = ?";
 
     try {
-      await createUserProfilePicFolder(userId);
-      let filepath = await uploadProfilePic(userId, file.path, file.filename);
+      let filepath = await imgUpload(file.path);
 
       db.query(qry2, [filepath, userId], (err) => {
         if (err) return res.status(500).send("internal error 22 =>" + err);
