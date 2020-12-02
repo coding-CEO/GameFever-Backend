@@ -17,6 +17,7 @@ const app = express();
 
 ///////////////////////
 // OTHER STUFF HERE...
+dotenv.config();
 app.use(cors());
 // app.use(
 //   cors({
@@ -24,8 +25,6 @@ app.use(cors());
 //   })
 // );
 app.use(express.json());
-dotenv.config();
-app.use("/public", express.static("public"));
 
 ///////////////////////
 // MIDDLEWARES HERE...
