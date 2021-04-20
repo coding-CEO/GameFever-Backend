@@ -47,12 +47,21 @@ router.patch("/:shopApplicationId", (req, res) => {
           becomeASellerStatuses.BECOME_A_SELLER_STATUS_ACCEPTED
         ) {
           let qry2 =
-            "INSERT INTO shop_profile (userId, shopName) VALUES (?, ?)";
-          db.query(qry2, [becomeASeller.userId, becomeASeller.name], (err) => {
-            if (err) return res.status(500).send("Internal Error");
+            "INSERT INTO shop_profile (userId, shopName, phoneNumber, whatsappNumber) VALUES (?, ?, ?, ?)";
+          db.query(
+            qry2,
+            [
+              becomeASeller.userId,
+              becomeASeller.name,
+              becomeASeller.phoneNumber,
+              becomeASeller.whatsappNumber,
+            ],
+            (err) => {
+              if (err) return res.status(500).send("Internal Error");
 
-            return res.send("Application accepted");
-          });
+              return res.send("Application accepted");
+            }
+          );
         } else {
           return res.send("application Rejected");
         }

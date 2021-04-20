@@ -4,7 +4,7 @@ const { becomeASellerStatuses } = require("../../../const");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const imgUpload = require('../../../uploadImages');
+const imgUpload = require("../../../uploadImages");
 
 let storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -77,7 +77,7 @@ router.post("/", (req, res) => {
     let files = req.files;
     if (files.length >= 2) {
       let qry =
-        "INSERT INTO shop_application (userId, frontAadharCardImgUrl, backAadharCardImgUrl, firstName, lastName, age, isMale) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        "INSERT INTO shop_application (userId, frontAadharCardImgUrl, backAadharCardImgUrl, firstName, lastName, age, isMale, phoneNumber, whatsappNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
       try {
         let frontAadharPath = await imgUpload(files[0].path);
@@ -93,6 +93,8 @@ router.post("/", (req, res) => {
             req.body.lastName,
             parseInt(req.body.age),
             req.body.isMale === "true" ? true : false,
+            req.body.phoneNumber,
+            req.body.whatsappNumber,
           ],
           (err) => {
             if (err) return res.status(500).send("Internal Error");

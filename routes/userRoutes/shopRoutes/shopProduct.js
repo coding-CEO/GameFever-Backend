@@ -3,7 +3,7 @@ const db = require("../../../db");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const imgUpload = require('../../../uploadImages');
+const imgUpload = require("../../../uploadImages");
 
 // TODO: delete product from whole website.
 
@@ -91,7 +91,7 @@ router.post("/", (req, res) => {
     let categoryId = parseInt(req.body.categoryId);
 
     let qry =
-      "INSERT INTO product (productTitle, productPrice, productMRP, productDescription, productPosterImgUrl, productStock, categoryId, productTags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO product (productTitle, productPrice, productMRP, productDescription, productPosterImgUrl, productStock, categoryId, productTags, phoneNumber, whatsappNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     db.query(
       qry,
       [
@@ -103,6 +103,8 @@ router.post("/", (req, res) => {
         parseInt(req.body.stock),
         parseInt(req.body.categoryId),
         req.body.tags,
+        req.body.phoneNumber,
+        req.body.whatsappNumber,
       ],
       async (err, rows) => {
         if (err) return res.status(500).send("Internal Error");
@@ -110,7 +112,6 @@ router.post("/", (req, res) => {
         let productId = rows.insertId;
 
         try {
-
           for (let i = 1; i < files.length; i++) {
             let qry1 =
               "INSERT INTO other_images (productId, otherImgUrl) VALUES (?, ?)";
