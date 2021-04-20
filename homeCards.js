@@ -57,7 +57,7 @@ getPostProducts = (qry2, homeCard) => {
           if (!isNaN(proId)) values.push([homeCardId, proId]);
         }
 
-        if(values.length > 0){
+        if (values.length > 0) {
           db.query(qry3, [values], (err) => {
             if (err) return reject(err);
             resolve(true);
@@ -69,7 +69,8 @@ getPostProducts = (qry2, homeCard) => {
 };
 
 router.post("/", adminTokenValidation, (req, res) => {
-  let qry1 = "DELETE hc, hci FROM home_card hc JOIN home_card_info hci";
+  let qry1 =
+    "DELETE home_card, home_card_info FROM home_card INNER JOIN home_card_info";
   db.query(qry1, async (err) => {
     if (err) return res.status(500).send("Internal Error");
     try {
