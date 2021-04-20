@@ -54,7 +54,7 @@ router.get("/:productId/other-imgs", (req, res) => {
 router.get("/:productId/short", (req, res) => {
   let productId = req.params.productId;
   let qry =
-    "SELECT productTitle, productPrice, productPosterImgUrl, productMRP, productStock FROM product WHERE productId = ? LIMIT 1";
+    "SELECT productTitle, productPrice, productPosterImgUrl, productMRP FROM product WHERE productId = ? LIMIT 1";
   db.query(qry, productId, (err, rows) => {
     if (err) return res.status(500).send("Internal Error");
 

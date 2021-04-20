@@ -91,7 +91,7 @@ router.post("/", (req, res) => {
     let categoryId = parseInt(req.body.categoryId);
 
     let qry =
-      "INSERT INTO product (productTitle, productPrice, productMRP, productDescription, productPosterImgUrl, productStock, categoryId, productTags, phoneNumber, whatsappNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO product (productTitle, productPrice, productMRP, productDescription, productPosterImgUrl, categoryId, productTags, phoneNumber, whatsappNumber) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     db.query(
       qry,
       [
@@ -100,7 +100,6 @@ router.post("/", (req, res) => {
         parseFloat(req.body.mrp),
         req.body.description,
         poster.path,
-        parseInt(req.body.stock),
         parseInt(req.body.categoryId),
         req.body.tags,
         req.body.phoneNumber,
@@ -157,7 +156,7 @@ router.patch("/:productId", (req, res) => {
       let posterpath = await imgUpload(poster.path);
 
       let qry =
-        "UPDATE product SET productTitle = ?, productPrice = ?, productMRP = ?, productDescription = ?, productPosterImgUrl = ?, productStock = ?, categoryId = ?, productTags = ? WHERE productId = ?";
+        "UPDATE product SET productTitle = ?, productPrice = ?, productMRP = ?, productDescription = ?, productPosterImgUrl = ?, categoryId = ?, productTags = ? WHERE productId = ?";
       db.query(
         qry,
         [
@@ -166,7 +165,6 @@ router.patch("/:productId", (req, res) => {
           parseFloat(req.body.mrp),
           req.body.description,
           posterpath,
-          parseInt(req.body.stock),
           parseInt(req.body.categoryId),
           req.body.tags,
           productId,
