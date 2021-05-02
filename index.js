@@ -18,12 +18,7 @@ const app = express();
 ///////////////////////
 // OTHER STUFF HERE...
 dotenv.config();
-// app.use(cors());
-app.use(
-  cors({
-    origin: "https://gamefever.netlify.app",
-  })
-);
+app.use(cors());
 app.use(express.json());
 
 ///////////////////////
