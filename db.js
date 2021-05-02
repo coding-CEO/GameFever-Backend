@@ -9,7 +9,7 @@ let db_con = mysql.createConnection({
   // host: "localhost",
   // user: "root",
   // password: "",
-  // database: "pcommersedb",
+  // database: "dbname",
 
   multipleStatements: true,
 });
